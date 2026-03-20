@@ -178,6 +178,8 @@ class RayOSFTTrainer(RayPPOTrainer):
 
                         # ✅ 在这里插入：从 8 条里选出 1 条
                         batch = self._select_best_of_n(batch)
+                        if len(batch) == 0:
+                            continue
 
                     # Balance the number of valid tokens across DP ranks.
                     # NOTE: This usually changes the order of data in the `batch`,
@@ -351,9 +353,11 @@ class RayOSFTTrainer(RayPPOTrainer):
 
             if C == N:
                 # ✅ 全对：选“最短的 50%”
-                correct_sorted = sorted(correct, key=lambda x: x[2])  # 按长度升序
-                k = max(1, len(correct_sorted) // 2)  # 取前 50%，至少保留 1 条
-                keep_indices.extend(idx for (idx, _, _) in correct_sorted[2:k])
+                # Update: if all correct, skip this problem
+                continue
+                # correct_sorted = sorted(correct, key=lambda x: x[2])  # 按长度升序
+                # k = max(1, len(correct_sorted) // 2)  # 取前 50%，至少保留 1 条
+                # keep_indices.extend(idx for (idx, _, _) in correct_sorted[2:k])
             else:
                 # ✅ 不全对：所有正确样本都保留
                 keep_indices.extend(idx for (idx, _, _) in correct)

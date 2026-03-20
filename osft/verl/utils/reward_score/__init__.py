@@ -36,6 +36,9 @@ def default_compute_score(data_source, solution_str, ground_truth, extra_info=No
         from . import gsm8k
 
         res = gsm8k.compute_score(solution_str, ground_truth)
+    elif "codeio-" in data_source:
+        from . import codeio
+        res = codeio.compute_score(solution_str, ground_truth, data_source)
     elif data_source in [
             "lighteval/MATH",
             "DigitalLearningGmbH/MATH-lighteval",

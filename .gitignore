@@ -1,0 +1,6 @@
+osft/conda_pkgs
+osft/logs
+**/__pycache__
+osft/verl.egg-info
+osft/outputs
+osft/wandb
