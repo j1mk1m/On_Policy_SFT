@@ -176,6 +176,15 @@ class RayOSFTTrainer(RayPPOTrainer):
                         # we do not have adv, therefore we use scores as rewards
                         batch.batch["token_level_rewards"] = batch.batch["token_level_scores"]
 
+                        sequence_score = batch.batch["token_level_scores"].sum(-1)
+                        metrics.update(
+                            {
+                                "reward/score/mean": torch.mean(sequence_score).item(),
+                                "reward/score/max": torch.max(sequence_score).item(),
+                                "reward/score/min": torch.min(sequence_score).item(),
+                            }
+                        )
+
                         # ✅ 在这里插入：从 8 条里选出 1 条
                         batch = self._select_best_of_n(batch)
                         if len(batch) == 0:
@@ -218,13 +227,13 @@ class RayOSFTTrainer(RayPPOTrainer):
                             if "token_level_scores" in batch.batch and batch.batch["token_level_scores"] is not None:
                                 sequence_score = batch.batch["token_level_scores"].sum(-1)
                                 scores = sequence_score.cpu().tolist()
-                                metrics.update(
-                                    {
-                                        "reward/score/mean": torch.mean(sequence_score).item(),
-                                        "reward/score/max": torch.max(sequence_score).item(),
-                                        "reward/score/min": torch.min(sequence_score).item(),
-                                    }
-                                )
+                                #metrics.update(
+                                #    {
+                                #        "reward/score/mean": torch.mean(sequence_score).item(),
+                                #        "reward/score/max": torch.max(sequence_score).item(),
+                                #        "reward/score/min": torch.min(sequence_score).item(),
+                                #    }
+                                #)
                             else:
                                 print("DEBUG dump_rollout_generations: 'token_level_scores' not found.")
                                 scores = [0 for _ in range(len(inputs))]  # placeholder, since we don't have scores in OSFT
