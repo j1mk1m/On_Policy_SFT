@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --partition general
 #SBATCH --time 1-23:00 # set time
-#SBATCH --job-name=osft
+#SBATCH --job-name=osft-neg-sample
 #SBATCH --chdir=/home/gyeongwk/On_Policy_SFT/osft # working directory
 
-#SBATCH --gres=gpu:8
+#SBATCH --gres=gpu:6000Ada:8
 #SBATCH --mem=256GB
 #SBATCH --cpus-per-task=8 # cpus
 
@@ -17,6 +17,6 @@ source ~/.bashrc
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate osft
 
-bash examples/osft_string_task.sh
+bash examples/osft_neg_sample.sh
 
 

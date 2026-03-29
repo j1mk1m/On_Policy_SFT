@@ -4,3 +4,5 @@ osft/logs
 osft/verl.egg-info
 osft/outputs
 osft/wandb
+
+osft/data/string_task

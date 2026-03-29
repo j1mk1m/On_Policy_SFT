@@ -1,7 +1,8 @@
 set -e
 set -x
-VISIBLE_DEVICES="0,1,2,3"
+VISIBLE_DEVICES="0,1,2,3,4,5,6,7"
 export HYDRA_FULL_ERROR=1
+NGPUS=8
 # export WORLD_SIZE=1
 # export RANK=0
 # export LOCAL_RANK=0
@@ -68,23 +69,23 @@ python3 -m recipe.osft.main_osft \
     actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
     actor_rollout_ref.rollout.name=vllm \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.80 \
-    actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=4 \
+    actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=2 \
     actor_rollout_ref.rollout.n=${ROLLOUT_N} \
     actor_rollout_ref.rollout.temperature=${TAU_S} \
     actor_rollout_ref.rollout.val_kwargs.temperature=1 \
     actor_rollout_ref.rollout.val_kwargs.n=1 \
     actor_rollout_ref.rollout.val_kwargs.do_sample=True \
-    actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=4 \
+    actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=2 \
     trainer.enable_train_temperature=${ENABLE_TRAIN_TEMP} \
     trainer.logger=['console','wandb'] \
     trainer.project_name=${PROJECT_NAME} \
     trainer.experiment_name=${EXP} \
     trainer.val_before_train=True \
     trainer.default_local_dir=${OUTPUT_DIR} \
-    trainer.n_gpus_per_node=4 \
+    trainer.n_gpus_per_node=$NGPUS \
     trainer.default_hdfs_dir=null \
     trainer.nnodes=1 \
-    trainer.save_freq=50 \
+    trainer.save_freq=100 \
     trainer.rollout_data_dir=${OUTPUT_DIR}/rollout_data \
     trainer.validation_data_dir=${OUTPUT_DIR}/rollout_eval_data \
     trainer.test_freq=25 \
