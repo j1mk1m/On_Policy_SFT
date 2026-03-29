@@ -11,6 +11,10 @@ defaults:
 trainer:
   enable_train_temperature: false # make tau_t=tau_s or not, default is set them different and tau_t=1
   enable_train_reward: true # logging training rollout reward or not
+  # When true (and enable_train_reward), keep incorrect rollouts for prompts that still have kept
+  # correct samples; actor minimizes NLL on positives and (scaled) negative NLL on negatives.
+  enable_negative_sample_training: false
+  negative_sample_loss_scale: 1.0 # multiplier on the negated CE objective for negative sequences
   
 actor_rollout_ref:
   actor:

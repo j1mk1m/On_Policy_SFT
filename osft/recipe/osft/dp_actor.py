@@ -26,6 +26,8 @@ from verl.utils.py_functional import append_to_dict
 from verl.utils.seqlen_balancing import rearrange_micro_batches
 from verl.workers.actor import DataParallelPPOActor
 
+from recipe.osft.osft_sample_selection import OSFT_LOSS_SIGN_KEY
+
 if is_cuda_available:
     pass
 elif is_npu_available:
@@ -51,6 +53,8 @@ class OSFTDataParallelPPOActor(DataParallelPPOActor):
         select_keys = ["responses", "input_ids", "attention_mask", "position_ids"]
         if multi_turn:
             select_keys.append("loss_mask")
+        if OSFT_LOSS_SIGN_KEY in data.batch.keys():
+            select_keys.append(OSFT_LOSS_SIGN_KEY)
         batch = data.select(batch_keys=select_keys).batch
         has_multi_modal_inputs = "multi_modal_inputs" in data.non_tensor_batch.keys()
 
@@ -104,8 +108,15 @@ class OSFTDataParallelPPOActor(DataParallelPPOActor):
                     # we should use log_prob to calculate the cross entropy loss
                     entropy, log_prob = self._forward_micro_batch(micro_batch=data, temperature=temperature, calculate_entropy=calculate_entropy)
 
-                    # Cross-Entropy Loss is equivalent to Negative Log-Likelihood.
-                    cross_entropy_loss = agg_loss(loss_mat=-log_prob, loss_mask=response_mask, loss_agg_mode=loss_agg_mode)
+                    sign_1d = data.get(OSFT_LOSS_SIGN_KEY)
+                    if sign_1d is None:
+                        sign_1d = torch.ones(log_prob.size(0), device=log_prob.device, dtype=log_prob.dtype)
+                    else:
+                        sign_1d = sign_1d.to(log_prob.device).to(log_prob.dtype)
+                    sign_exp = sign_1d.unsqueeze(-1)
+                    # Positive s: standard NLL (-log p); negative s: minimize s * (-log p) => discourage the sample.
+                    loss_mat = -log_prob * sign_exp
+                    cross_entropy_loss = agg_loss(loss_mat=loss_mat, loss_mask=response_mask, loss_agg_mode=loss_agg_mode)
                     policy_loss = cross_entropy_loss
 
                     with torch.no_grad():

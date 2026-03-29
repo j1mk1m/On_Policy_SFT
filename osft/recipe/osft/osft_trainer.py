@@ -38,6 +38,8 @@ from verl.utils.metric import (
 )
 from verl.utils.tracking import ValidationGenerationsLogger
 
+from recipe.osft.osft_sample_selection import OSFT_LOSS_SIGN_KEY, apply_osft_sample_selection
+
 WorkerType = Type[Worker]
 
 
@@ -185,10 +187,23 @@ class RayOSFTTrainer(RayPPOTrainer):
                             }
                         )
 
-                        # ✅ 在这里插入：从 8 条里选出 1 条
-                        batch = self._select_best_of_n(batch)
+                        batch = apply_osft_sample_selection(
+                            batch,
+                            enable_negative_sample_training=self.config.trainer.get(
+                                "enable_negative_sample_training", False
+                            ),
+                            negative_sample_loss_scale=float(
+                                self.config.trainer.get("negative_sample_loss_scale", 1.0)
+                            ),
+                            dp_world_size=getattr(self.actor_rollout_wg, "world_size", 1),
+                            rollout_n=getattr(self.config.actor_rollout_ref.rollout, "n", None),
+                        )
                         if len(batch) == 0:
                             continue
+                        if OSFT_LOSS_SIGN_KEY in batch.batch.keys():
+                            sgn = batch.batch[OSFT_LOSS_SIGN_KEY]
+                            metrics["osft/n_positive_seq"] = int((sgn > 0).sum().item())
+                            metrics["osft/n_negative_seq"] = int((sgn < 0).sum().item())
 
                     # Balance the number of valid tokens across DP ranks.
                     # NOTE: This usually changes the order of data in the `batch`,
@@ -316,73 +331,3 @@ class RayOSFTTrainer(RayPPOTrainer):
         if "swanlab" in logger.logger:
             logger.logger["swanlab"].finish()
         return val_metrics
-    
-    def _select_best_of_n(self, batch: DataProto) -> DataProto:
-        """
-        对每个原始样本（同一个 uid）：
-        - 只看正确样本（score > 0）
-        - 记正确数 C，总 rollout 数为 N：
-            * 如果 C == N:            选“最短的 50% 正确样本”
-            * 如果 0 < C < N:         所有正确样本都保留
-            * 如果 C == 0:            整题丢弃
-        - 最后再按 dp_size 截断到可整除
-        """
-        import torch
-
-        # [B * N]
-        uids = [str(u) for u in batch.non_tensor_batch["uid"]]
-        scores = batch.batch["token_level_scores"].sum(-1)      # [B * N]
-        resp_len = batch.batch["response_mask"].sum(-1)         # [B * N]
-
-        # 每个 uid -> 该题下所有样本 (idx, score, len)
-        per_uid: dict[str, list[tuple[int, float, int]]] = {}
-        for i, uid in enumerate(uids):
-            s = float(scores[i].item())
-            l = int(resp_len[i].item())
-            per_uid.setdefault(uid, []).append((i, s, l))
-
-        # 配置里的 rollout 数（兼容不同 n）
-        rollout_n = getattr(self.config.actor_rollout_ref.rollout, "n", None)
-
-        keep_indices: list[int] = []
-
-        for uid, lst in per_uid.items():
-            # 全部候选：lst = [(idx, score, len), ...]
-            # 正确样本
-            correct = [(idx, s, l) for (idx, s, l) in lst if s > 0]
-            C = len(correct)
-            if C == 0:
-                # 这题全错：整题丢弃
-                continue
-            
-
-            # 本题的理论 rollout 数 N
-            local_rollout_n = rollout_n if rollout_n is not None else len(lst)
-            N = local_rollout_n
-
-            if C == N:
-                # ✅ 全对：选“最短的 50%”
-                # Update: if all correct, skip this problem
-                continue
-                # correct_sorted = sorted(correct, key=lambda x: x[2])  # 按长度升序
-                # k = max(1, len(correct_sorted) // 2)  # 取前 50%，至少保留 1 条
-                # keep_indices.extend(idx for (idx, _, _) in correct_sorted[2:k])
-            else:
-                # ✅ 不全对：所有正确样本都保留
-                keep_indices.extend(idx for (idx, _, _) in correct)
-
-        # 如果全部被丢掉，返回空 batch
-        if not keep_indices:
-            return batch.select_idxs([])
-
-        # 保证 DP 可整除（如果你仍然开着 balance_batch）
-        dp_size = getattr(self.actor_rollout_wg, "world_size", 1)
-        keep_indices = sorted(set(keep_indices))
-
-        if dp_size > 1:
-            trim_len = (len(keep_indices) // dp_size) * dp_size
-            if trim_len == 0:
-                return batch.select_idxs([])
-            keep_indices = keep_indices[:trim_len]
-
-        return batch.select_idxs(keep_indices)
