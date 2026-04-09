@@ -1,0 +1,56 @@
+data:
+  train_batch_size: 128
+  micro_batch_size_per_gpu: 2
+  train_files: ~/data/string_manipulation_dpo_difficult/train.parquet
+  val_files: ~/data/string_manipulation_dpo_difficult/test.parquet
+  prompt_key: prompt
+  chosen_key: chosen
+  rejected_key: rejected
+  max_length: 2048
+  add_eos: true
+  cache_dir: ~/.cache/verl/rm
+
+model:
+  partial_pretrain: ~/models/gemma-1.1-7b-it
+  attn_implementation: eager
+  fsdp_config:
+    model_dtype: fp32
+    wrap_policy:
+      min_num_params: 0
+  enable_gradient_checkpointing: true
+  trust_remote_code: false
+  lora:
+    enabled: false
+    r: 64
+    alpha: 16
+    dropout: 0.05
+    target_modules: null
+    bias: none
+
+loss:
+  beta: 0.1
+  label_smoothing: 0.0
+  reference_free: false
+
+optim:
+  lr: 1e-5
+  betas: [0.9, 0.95]
+  weight_decay: 0.01
+  warmup_steps_ratio: 0.1
+  clip_grad: 1.0
+  lr_scheduler: cosine
+
+trainer:
+  default_local_dir: checkpoints/${trainer.project_name}/${trainer.experiment_name}
+  default_hdfs_dir: null
+  resume_from: null
+  project_name: dpo
+  experiment_name: dpo-test
+  total_epochs: 1
+  total_training_steps: null
+  logger: [ "console", "wandb" ]
+  seed: 1
+  save_freq: 100
+  test_freq: 25
+  nnodes: 1
+  n_gpus_per_node: 8

@@ -1,10 +1,11 @@
 #!/bin/bash
 #SBATCH --partition general
 #SBATCH --time 1-23:00 # set time
-#SBATCH --job-name=osft
+#SBATCH --job-name=dpo
 #SBATCH --chdir=/home/gyeongwk/On_Policy_SFT/osft # working directory
 
-#SBATCH --gres=gpu:8
+#SBATCH --gres=gpu:L40S:4
+#SBATCH --exclude babel-q5-32,babel-p5-20,babel-q5-28,babel-o5-32
 #SBATCH --mem=256GB
 #SBATCH --cpus-per-task=8 # cpus
 
@@ -13,10 +14,12 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=j1mk1m.dummy@gmail.com
 
+# Good GPUs: t5-32, v9-28
+
 source ~/.bashrc
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate osft
 
-bash scripts/osft_string_task.sh
+bash scripts/dpo_full.sh
 
 

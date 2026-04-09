@@ -10,10 +10,9 @@ import random
 
 
 parser = ArgumentParser()
-parser.add_argument('--gen_path', type=str, default="/fs-computility/prime/shared/chenweize/results/synthetic_string_manipulation_single_difficult/llama_3.1_8b_base_gen_train.parquet")
-parser.add_argument('--data_path', type=str, default="data/synthetic_data/synthetic_string_manipulation_single_difficult/forward_train.parquet")
-parser.add_argument('--save_path', type=str, default="data/string_manipulation_sft_difficult")
-parser.add_argument('--val_size', type=int, default=1024)
+parser.add_argument('--gen_path', type=str, default="gen_path.parquet")
+parser.add_argument('--save_path', type=str, default="train.parquet")
+parser.add_argument('--val_size', type=int, default=256)
 parser.add_argument('--max_correct_ratio', type=float, default=1.0)
 parser.add_argument('--max_length', type=int, default=None)
 parser.add_argument('--tokenizer', type=str, default=None)
@@ -53,7 +52,6 @@ if os.path.isdir(args.gen_path):
 else:
     all_gen_path = [args.gen_path]
 
-raw_dataset = load_dataset("parquet", data_files=args.data_path)['train']
 new_dataset = []
 func_statistics = defaultdict(lambda: 0)
 
@@ -63,7 +61,7 @@ for gen_path in all_gen_path:
     dataset = dataset.map(filter_incorrect, num_proc=4, remove_columns=['responses'])
     # dataset = dataset.filter(lambda x: len(x['responses']) > 0)
 
-    for data, raw_data in zip(dataset, raw_dataset):
+    for data in tqdm(dataset):
         responses = data['responses']
         if args.n_samples > 0 and len(responses) > args.n_samples:
             responses = random.sample(responses, k=args.n_samples)
@@ -72,7 +70,7 @@ for gen_path in all_gen_path:
                 if not response.strip().endswith('<|eot_id|>'):
                     continue
             # new_data = {k: v for k, v in data.items() if k != 'responses'}
-            prompt = raw_data['prompt'][0]['content']
+            prompt = data['prompt'][0]['content']
             if not args.no_remove_context:
                 prompt = prompt[prompt.find("def main_solution(x):"):]
                 prompt = f"You are given a code:\n\n{prompt}"

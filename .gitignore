@@ -6,3 +6,5 @@ osft/outputs
 osft/wandb
 
 osft/data/string_task
+osft/test.py
+osft/recipe/archive
