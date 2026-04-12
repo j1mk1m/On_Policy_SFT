@@ -7,16 +7,13 @@ data:
   chosen_key: chosen
   rejected_key: rejected
   max_length: 2048
-  add_eos: true
-  cache_dir: ~/.cache/verl/rm
+  max_prompt_length: 1024
 
 model:
   partial_pretrain: ~/models/gemma-1.1-7b-it
-  attn_implementation: eager
+  attn_implementation: flash_attention_2
   fsdp_config:
-    model_dtype: fp32
-    wrap_policy:
-      min_num_params: 0
+    model_dtype: bf16
   enable_gradient_checkpointing: true
   trust_remote_code: false
   lora:
@@ -30,6 +27,7 @@ model:
 loss:
   beta: 0.1
   label_smoothing: 0.0
+  loss_type: sigmoid
   reference_free: false
 
 optim:
@@ -42,15 +40,15 @@ optim:
 
 trainer:
   default_local_dir: checkpoints/${trainer.project_name}/${trainer.experiment_name}
-  default_hdfs_dir: null
   resume_from: null
   project_name: dpo
   experiment_name: dpo-test
   total_epochs: 1
   total_training_steps: null
-  logger: [ "console", "wandb" ]
+  logger: ["wandb"]
   seed: 1
   save_freq: 100
   test_freq: 25
+  logging_steps: 10
   nnodes: 1
   n_gpus_per_node: 8

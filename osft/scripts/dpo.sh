@@ -36,12 +36,13 @@ CUDA_VISIBLE_DEVICES=${VISIBLE_DEVICES} torchrun --standalone --nproc_per_node=$
   data.train_batch_size=16 \
   data.micro_batch_size_per_gpu=1 \
   data.max_length=4096 \
+  data.max_prompt_length=2048 \
   loss.beta=0.01 \
+  loss.loss_type=sigmoid \
   loss.label_smoothing=0.0 \
   trainer.project_name=string-task \
   trainer.experiment_name="${EXP_NAME}" \
   trainer.default_local_dir="${OUTPUT_DIR}" \
-  trainer.default_hdfs_dir=null \
   trainer.nnodes=1 \
   trainer.n_gpus_per_node=${NGPUS} \
   trainer.save_freq=100 \

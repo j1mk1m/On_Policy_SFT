@@ -4,7 +4,7 @@
 #SBATCH --job-name=dpo
 #SBATCH --chdir=/home/gyeongwk/On_Policy_SFT/osft # working directory
 
-#SBATCH --gres=gpu:8
+#SBATCH --gres=gpu:4
 #SBATCH --mem=512GB
 #SBATCH --cpus-per-task=8 # cpus
 
@@ -17,6 +17,6 @@ source ~/.bashrc
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate osft
 
-bash scripts/dpo_full_n8.sh
+bash scripts/dpo_test.sh
 
 
