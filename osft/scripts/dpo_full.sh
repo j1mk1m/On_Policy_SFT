@@ -9,9 +9,9 @@ VISIBLE_DEVICES="0,1,2,3"
 USER_DATA_DIR=/data/user_data/gyeongwk
 
 MODEL_PATH="gyeongwk/stage1-rft"
-TRAIN_FILE="data/string_task/dpo-all-max-none/train.parquet"
-VAL_FILE="data/string_task/dpo-all-max-none/test.parquet"
-EXP_NAME="dpo-string-task-full"
+TRAIN_FILE="data/string_task/dpo-base-with-code-all-max-none/train.parquet"
+VAL_FILE="data/string_task/dpo-base-with-code-all-max-none/test.parquet"
+EXP_NAME="dpo-string-task-full-base-with-code"
 OUTPUT_DIR="${USER_DATA_DIR}/checkpoints/string-task/${EXP_NAME}"
 
 # Example: "${OUTPUT_DIR}/global_step_400"

@@ -12,7 +12,7 @@ import torch
 import torch.nn.functional as F
 from torch import optim
 from torch.distributed.device_mesh import DeviceMesh, init_device_mesh
-from torch.distributed.fsdp import MixedPrecision
+from torch.distributed.fsdp import CPUOffload, MixedPrecision
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.utils.data import DataLoader, Dataset, DistributedSampler
 from tqdm import tqdm
