@@ -10,6 +10,7 @@ from typing import Dict, Optional, Tuple
 import hydra
 import torch
 import torch.nn.functional as F
+from omegaconf import OmegaConf
 from torch import optim
 from torch.distributed.device_mesh import DeviceMesh, init_device_mesh
 from torch.distributed.fsdp import CPUOffload, MixedPrecision
@@ -504,6 +505,7 @@ class FSDPDPOTrainer:
                 project_name=self.config.trainer.project_name,
                 experiment_name=self.config.trainer.experiment_name,
                 default_backend=self.config.trainer.logger,
+                config=OmegaConf.to_container(self.config, resolve=True),
             )
 
         total_training_steps = len(self.train_dataloader) * self.config.trainer.total_epochs

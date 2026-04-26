@@ -20,6 +20,7 @@ def apply_osft_sample_selection(
     batch: DataProto,
     *,
     enable_negative_sample_training: bool,
+    enable_group_reward_baseline: bool,
     negative_sample_loss_scale: float,
     dp_world_size: int,
     rollout_n: int | None,
@@ -39,6 +40,10 @@ def apply_osft_sample_selection(
 
     When ``enable_negative_sample_training`` is False, behavior matches the legacy path: only
     positive rows are kept and ``OSFT_LOSS_SIGN_KEY`` is not added.
+
+    If ``enable_group_reward_baseline`` is True (and negative sample training is enabled), each
+    rollout score is centered by subtracting the mean score of its uid group before deciding
+    whether a rollout is positive (>0) or negative (<=0).
     """
     uids = [str(u) for u in batch.non_tensor_batch["uid"]]
     scores = batch.batch["token_level_scores"].sum(-1)
@@ -50,9 +55,20 @@ def apply_osft_sample_selection(
         l = int(resp_len[i].item())
         per_uid.setdefault(uid, []).append((i, s, l))
 
+    score_by_index: dict[int, float] = {}
+    if enable_negative_sample_training and enable_group_reward_baseline:
+        for _, lst in per_uid.items():
+            mean_score = sum(s for (_, s, _) in lst) / len(lst)
+            for idx, s, _ in lst:
+                score_by_index[idx] = s - mean_score
+    else:
+        for _, lst in per_uid.items():
+            for idx, s, _ in lst:
+                score_by_index[idx] = s
+
     positive_indices: list[int] = []
     for uid, lst in per_uid.items():
-        correct = [(idx, s, l) for (idx, s, l) in lst if s > 0]
+        correct = [(idx, score_by_index[idx], l) for (idx, _, l) in lst if score_by_index[idx] > 0]
         c = len(correct)
         if c == 0:
             continue
@@ -72,8 +88,8 @@ def apply_osft_sample_selection(
         for uid, lst in per_uid.items():
             if not any(idx in positive_set for (idx, _, _) in lst):
                 continue
-            for idx, s, _ in lst:
-                if s <= 0:
+            for idx, _, _ in lst:
+                if score_by_index[idx] <= 0:
                     negative_indices.append(idx)
         merged_indices = sorted(positive_set | set(negative_indices))
     else:
@@ -91,7 +107,7 @@ def apply_osft_sample_selection(
         device = out.batch["token_level_scores"].device
         signs: list[float] = []
         for idx in merged_indices:
-            seq_score = float(scores[idx].item())
+            seq_score = score_by_index[idx]
             if seq_score > 0:
                 signs.append(1.0)
             else:

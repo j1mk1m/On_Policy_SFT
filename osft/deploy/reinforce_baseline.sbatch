@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition general
 #SBATCH --time 1-23:00 # set time
-#SBATCH --job-name=osft-neg-sample
+#SBATCH --job-name=reinforce-baseline
 #SBATCH --chdir=/home/gyeongwk/On_Policy_SFT/osft # working directory
 
 #SBATCH --gres=gpu:4
@@ -14,9 +14,6 @@
 #SBATCH --mail-user=j1mk1m.dummy@gmail.com
 
 source ~/.bashrc
-source ~/anaconda3/etc/profile.d/conda.sh
 conda activate osft
 
-bash scripts/osft_neg_sample.sh
-
-
+bash scripts/reinforce_baseline.sh

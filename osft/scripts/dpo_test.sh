@@ -8,7 +8,7 @@ VISIBLE_DEVICES="0,1,2,3"
 
 USER_DATA_DIR=/data/user_data/gyeongwk
 
-MODEL_PATH="gyeongwk/stage1-rft"
+MODEL_PATH="meta-llama/Llama-3.2-1B"
 TRAIN_FILE="data/string_task/dpo-base-with-code-all-max-none/train.parquet"
 VAL_FILE="data/string_task/dpo-base-with-code-all-max-none/test.parquet"
 EXP_NAME="dpo-string-task-test-base-with-code"
