@@ -9,9 +9,9 @@ VISIBLE_DEVICES="0,1,2,3"
 USER_DATA_DIR=/data/user_data/gyeongwk
 
 MODEL_PATH="gyeongwk/stage1-rft"
-TRAIN_FILE="data/string_task/dpo-all-max-none/train.parquet"
-VAL_FILE="data/string_task/dpo-all-max-none/test.parquet"
-EXP_NAME="dpo-string-task-full"
+TRAIN_FILE="data/string_task/dpo-base-with-code-all-max-none/train.parquet"
+VAL_FILE="data/string_task/dpo-base-with-code-all-max-none/test.parquet"
+EXP_NAME="dpo-string-task-full-base-with-code"
 OUTPUT_DIR="${USER_DATA_DIR}/checkpoints/string-task/${EXP_NAME}"
 
 # Example: "${OUTPUT_DIR}/global_step_400"
@@ -31,8 +31,9 @@ CUDA_VISIBLE_DEVICES=${VISIBLE_DEVICES} torchrun --standalone --nproc_per_node=$
   data.train_batch_size=16 \
   data.micro_batch_size_per_gpu=1 \
   data.max_length=4096 \
-  loss.beta=0.01 \
+  loss.beta=0.1 \
   loss.label_smoothing=0.0 \
+  optim.lr=5e-6 \
   trainer.project_name=string-task \
   trainer.experiment_name="${EXP_NAME}" \
   trainer.default_local_dir="${OUTPUT_DIR}" \

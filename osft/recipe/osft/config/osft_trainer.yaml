@@ -14,6 +14,9 @@ trainer:
   # When true (and enable_train_reward), keep incorrect rollouts for prompts that still have kept
   # correct samples; actor minimizes NLL on positives and (scaled) negative NLL on negatives.
   enable_negative_sample_training: false
+  # Applies only when enable_negative_sample_training=true. If true, use
+  # (sequence_reward - per-prompt mean sequence_reward) to define positive/negative samples.
+  enable_group_reward_baseline: false
   negative_sample_loss_scale: 1.0 # multiplier on the negated CE objective for negative sequences
   
 actor_rollout_ref:
@@ -21,8 +24,11 @@ actor_rollout_ref:
     optim:
       lr_warmup_steps: 10
     entropy_coeff: 0
+    fsdp_config:
+      model_dtype: bfloat16
   rollout:
     tensor_model_parallel_size: 1
+    dtype: bfloat16
 
 algorithm:
   adv_estimator: null

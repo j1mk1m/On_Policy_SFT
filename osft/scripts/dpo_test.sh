@@ -3,15 +3,16 @@ set -x
 
 export HYDRA_FULL_ERROR=1
 
-NGPUS=8
-VISIBLE_DEVICES="0,1,2,3,4,5,6,7"
+NGPUS=4
+VISIBLE_DEVICES="0,1,2,3"
 
 USER_DATA_DIR=/data/user_data/gyeongwk
 
-MODEL_PATH="gyeongwk/stage1-rft"
-TRAIN_FILE="data/string_task/dpo-all-max-none/train.parquet"
-VAL_FILE="data/string_task/dpo-all-max-none/test.parquet"
-EXP_NAME="dpo-string-task-full-n8"
+MODEL_PATH="meta-llama/Llama-3.2-1B"
+TRAIN_FILE="data/string_task/dpo-base-with-code-all-max-none/train.parquet"
+VAL_FILE="data/string_task/dpo-base-with-code-all-max-none/test.parquet"
+EXP_NAME="dpo-string-task-test-base-with-code"
+
 OUTPUT_DIR="${USER_DATA_DIR}/checkpoints/string-task/${EXP_NAME}"
 
 # Example: "${OUTPUT_DIR}/global_step_400"
@@ -30,7 +31,7 @@ CUDA_VISIBLE_DEVICES=${VISIBLE_DEVICES} torchrun --standalone --nproc_per_node=$
   data.val_files="${VAL_FILE}" \
   data.train_batch_size=16 \
   data.micro_batch_size_per_gpu=1 \
-  data.max_length=4096 \
+  data.max_length=1024 \
   loss.beta=0.01 \
   loss.label_smoothing=0.0 \
   trainer.project_name=string-task \

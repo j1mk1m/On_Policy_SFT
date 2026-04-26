@@ -192,6 +192,9 @@ class RayOSFTTrainer(RayPPOTrainer):
                             enable_negative_sample_training=self.config.trainer.get(
                                 "enable_negative_sample_training", False
                             ),
+                            enable_group_reward_baseline=self.config.trainer.get(
+                                "enable_group_reward_baseline", False
+                            ),
                             negative_sample_loss_scale=float(
                                 self.config.trainer.get("negative_sample_loss_scale", 1.0)
                             ),

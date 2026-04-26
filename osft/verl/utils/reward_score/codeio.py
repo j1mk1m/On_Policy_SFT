@@ -257,10 +257,10 @@ def compute_score_induction(solution, ground_truth):
     for function in all_func_names:
         if function + '(' not in main_func:
             print(f"[Error] Function {function} not found in the solution!")
-            return 0, 0
+            return 0
         if len(re.findall(r"def\s*" + function, main_func)) >= 1:
             print(f"[Error] The definition of function {function} should not appear in model's response")
-            return 0, 0
+            return 0
 
     for input, output in zip(ref_input, ref_output):
         code = template_check_input.format(solution_prefix=solution_prefix,
@@ -274,18 +274,18 @@ def compute_score_induction(solution, ground_truth):
         try:
             ret = run_code(RunCodeRequest(code=code, language='python', client_timeout=5))
         except:
-            return 0, 0
+            return 0
         if ret.status != "Success":
             print(
                 f"[Execution Output]\n  Message: {ret.message}\nSTDOUT: {ret.run_result.stdout}\nSTDERR: {ret.run_result.stderr}"
             )
             print("[Final Score]: 0")
-            return 0, 0
+            return 0
     print(
         f"[Execution Output]\n  Message: {ret.message}\nSTDOUT: {ret.run_result.stdout}\nSTDERR: {ret.run_result.stderr}"
     )
     print("[Final Score]: 1")
-    return 1, 1
+    return 1
 
 
 def compute_score_backward(solution, ground_truth):
@@ -302,7 +302,7 @@ def compute_score_backward(solution, ground_truth):
 
     if not isinstance(solution, dict):
         print("The input parameter is not a valid JSON object!")
-        return -1, 0
+        return -1
 
     exact_match = True
     for k, v in ref_input.items():
@@ -310,7 +310,7 @@ def compute_score_backward(solution, ground_truth):
             continue
         exact_match = False
     if exact_match:
-        return 1, 1
+        return 1
 
     # Run the code with the input
     code = template_check_input.format(solution_prefix=solution_prefix,
@@ -324,19 +324,19 @@ def compute_score_backward(solution, ground_truth):
     try:
         ret = run_code(RunCodeRequest(code=code, language='python', client_timeout=5))
     except:
-        return 0, 0
+        return 0
     if ret.status != "Success":
         print(
             f"[Execution Output]\n  Message: {ret.message}\nSTDOUT: {ret.run_result.stdout}\nSTDERR: {ret.run_result.stderr}"
         )
         print("[Final Score]: 0")
-        return 0, 0
+        return 0
     else:
         print(
             f"[Execution Output]\n  Message: {ret.message}\nSTDOUT: {ret.run_result.stdout}\nSTDERR: {ret.run_result.stderr}"
         )
         print("[Final Score]: 1")
-        return 1, 1
+        return 1
 
 
 def compute_score_forward(solution, ground_truth):
@@ -345,13 +345,13 @@ def compute_score_forward(solution, ground_truth):
     if acc:
         print("[Match] Correct!")
         print("[Final Score]: 1")
-        return 1, 1
+        return 1
     else:
         print(
             f"[Mismatch] Given the input {json.dumps(ground_truth['ref_input'])}, your predicted output is {json.dumps(solution)}, ground truth is {json.dumps(ref_output)}."
         )
         print("[Final Score]: 0")
-        return 0, 0
+        return 0
 
 
 def compute_score(solution_str, ground_truth, task="codeio-backward"):
@@ -375,28 +375,28 @@ def compute_score(solution_str, ground_truth, task="codeio-backward"):
         extracted = extraction(solution_str)
         if extracted is None:
             print("Fail to extract a complete and valid json from the model response!")
-            return -1, 0
+            return -1
     except Exception as e:
         print(f"Error in extracting JSON: {e}")
-        return -1, 0
+        return -1
 
     print(f"[Extracted]\n{extracted}")
 
     if (task.startswith('backward') or task.startswith('forward')) and not isinstance(extracted, dict):
         print("The extracted JSON is not a valid JSON object!")
-        return -1, 0
+        return -1
 
     try:
         if task.startswith('backward'):
             if "input" not in extracted:
                 print("No field 'input' in the extracted JSON!")
-                return -1, 0
+                return -1
             input_param = extracted['input']
             return compute_score_backward(input_param, ground_truth)
         elif task.startswith('forward'):
             if "output" not in extracted:
                 print("No field 'output' in the extracted JSON!")
-                return -1, 0
+                return -1
             output = extracted['output']
             return compute_score_forward(output, ground_truth)
         elif task.startswith('induction'):
@@ -405,4 +405,4 @@ def compute_score(solution_str, ground_truth, task="codeio-backward"):
             raise NotImplementedError(f"Task {task} not implemented.")
     except Exception as e:
         print(f"Error {e}")
-        return -1, 0
+        return -1
