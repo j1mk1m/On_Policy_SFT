@@ -24,11 +24,8 @@ actor_rollout_ref:
     optim:
       lr_warmup_steps: 10
     entropy_coeff: 0
-    fsdp_config:
-      model_dtype: bfloat16
   rollout:
     tensor_model_parallel_size: 1
-    dtype: bfloat16
 
 algorithm:
   adv_estimator: null
